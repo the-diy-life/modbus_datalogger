@@ -24,7 +24,10 @@ const int TEST_HREG = 100;
 
 //ModbusIP object
 ModbusIP mb;
-  
+
+int value1 = 0xABCD;
+int value2 = 0x1234;
+
 void setup() {
  #ifdef ESP8266
   Serial.begin(74880);
@@ -44,15 +47,13 @@ void setup() {
   Serial.println("IP address: ");
   Serial.println(WiFi.localIP());
 
-  int value1 = 0xABCD;
-  int value2 = 0x1234;
-
   mb.slave();
   mb.addHreg(TEST_HREG, value1);
   mb.addHreg(TEST_HREG+1, value2);
 }
  
 void loop() {
+   mb.Hreg(TEST_HREG+1, value1);
    //Call once inside loop() - all magic here
    mb.task();
    delay(10);
