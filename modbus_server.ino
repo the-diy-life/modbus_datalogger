@@ -44,8 +44,12 @@ void setup() {
   Serial.println("IP address: ");
   Serial.println(WiFi.localIP());
 
+  int value1 = 0xABCD;
+  int value2 = 0x1234;
+
   mb.slave();
-  mb.addHreg(TEST_HREG, 0xABCD);
+  mb.addHreg(TEST_HREG, value1);
+  mb.addHreg(TEST_HREG+1, value2);
 }
  
 void loop() {
