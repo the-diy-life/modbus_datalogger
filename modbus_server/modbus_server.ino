@@ -26,6 +26,8 @@ DHTesp dht;
 
 // Modbus Registers Offsets
 const int TEST_HREG = 100;
+const int LED_REG = 200;
+const int ledPin = D0; //GPIO0
 
 
 //ModbusIP object
@@ -64,6 +66,9 @@ void setup() {
   mb.addHreg(TEST_HREG+1, humidity);
   //mb.addHreg(TEST_HREG, value1++);
   //mb.addHreg(TEST_HREG+1, value2++);
+  pinMode(ledPin, OUTPUT);
+  mb.addCoil(LED_REG);
+  
   mytime = millis();
 }
  
@@ -76,7 +81,7 @@ void loop() {
        temperature = dht.getTemperature();
        humidity = dht.getHumidity();
        
-       if (temperature != 65535 && humidity != 65535)
+       if (temperature != 65535 && humidity != 65535) //this is a bug in the code
        {
          // print the temperature and humidity values on the serial window
          Serial.print("Temperature is: ");
@@ -90,6 +95,7 @@ void loop() {
          mb.Hreg(TEST_HREG+1, humidity);
          //mb.Hreg(TEST_HREG, value1++);
          //mb.Hreg(TEST_HREG+1, value2++);
+         digitalWrite(ledPin, mb.Coil(LED_REG));
        }
     }
     //Call once inside loop() - all magic here
