@@ -26,8 +26,11 @@ DHTesp dht;
 
 // Modbus Registers Offsets
 const int TEST_HREG = 100;
-const int LED_REG = 200;
-const int ledPin = D0; //GPIO0
+const int COIL_REG = 200;
+const int coilPin0 = D0; //GPIO0
+const int coilPin1 = D1; //GPIO1
+const int coilPin2 = D2; //GPIO2
+//const int coilPin3 = D6; //GPIO3
 
 
 //ModbusIP object
@@ -66,8 +69,18 @@ void setup() {
   mb.addHreg(TEST_HREG+1, humidity);
   //mb.addHreg(TEST_HREG, value1++);
   //mb.addHreg(TEST_HREG+1, value2++);
-  pinMode(ledPin, OUTPUT);
-  mb.addCoil(LED_REG);
+  pinMode(coilPin0, OUTPUT);
+  pinMode(coilPin1, OUTPUT);
+  pinMode(coilPin2, OUTPUT);
+  //pinMode(coilPin3, OUTPUT);
+  digitalWrite(coilPin0, LOW);
+  digitalWrite(coilPin1, LOW);
+  digitalWrite(coilPin2, LOW);
+  //digitalWrite(coilPin3, LOW);
+  mb.addCoil(COIL_REG);
+  mb.addCoil(COIL_REG+1);
+  mb.addCoil(COIL_REG+2);
+  //mb.addCoil(COIL_REG+3);
   
   mytime = millis();
 }
@@ -95,7 +108,10 @@ void loop() {
          mb.Hreg(TEST_HREG+1, humidity);
          //mb.Hreg(TEST_HREG, value1++);
          //mb.Hreg(TEST_HREG+1, value2++);
-         digitalWrite(ledPin, mb.Coil(LED_REG));
+         digitalWrite(coilPin0, mb.Coil(COIL_REG));
+         digitalWrite(coilPin1, mb.Coil(COIL_REG+1));
+         digitalWrite(coilPin2, mb.Coil(COIL_REG+2));
+         digitalWrite(coilPin3, mb.Coil(COIL_REG+3));
        }
     }
     //Call once inside loop() - all magic here

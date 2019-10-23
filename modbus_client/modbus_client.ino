@@ -66,8 +66,9 @@ const int REG = 100;               // Modbus Hreg Offset
 IPAddress remote(10, 2, 101, 103);  // Address of Modbus Slave device
 const int LOOP_COUNT = 10;
 uint8_t show = LOOP_COUNT;
-const uint16_t LED_REG = 200;
-bool led = 0;
+const uint16_t COIL_REG = 200;
+bool coil[4] = {0};
+
 
 ModbusIP mb;  //ModbusIP object
 
@@ -329,8 +330,14 @@ void loop(){
         if (mb.isConnected(remote)) {   // Check if connection to Modbus Slave is established
           mb.readHreg(remote, REG, &temperature);  // Initiate Read Coil from Modbus Slave
           mb.readHreg(remote, REG+1, &humidity);  // Initiate Read Coil from Modbus Slave
-          mb.writeCoil(remote, LED_REG, led);
-          led ^= 1;
+          mb.writeCoil(remote, COIL_REG, coil[0]);
+          mb.writeCoil(remote, COIL_REG+1, coil[1]);
+          mb.writeCoil(remote, COIL_REG+2, coil[2]);
+          //mb.writeCoil(remote, COIL_REG+3, coil[3]);
+          coil[0] ^= 1;
+          coil[1] ^= 1;
+          coil[2] ^= 1;
+          //coil[4] ^= 1;
         } else {
           mb.connect(remote);           // Try to connect if no connection
         }
