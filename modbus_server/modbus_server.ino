@@ -108,12 +108,23 @@ void loop() {
          mb.Hreg(TEST_HREG+1, humidity);
          //mb.Hreg(TEST_HREG, value1++);
          //mb.Hreg(TEST_HREG+1, value2++);
-         digitalWrite(coilPin0, mb.Coil(COIL_REG));
-         digitalWrite(coilPin1, mb.Coil(COIL_REG+1));
-         digitalWrite(coilPin2, mb.Coil(COIL_REG+2));
-         digitalWrite(coilPin3, mb.Coil(COIL_REG+3));
+//         digitalWrite(coilPin0, mb.Coil(COIL_REG));
+//         digitalWrite(coilPin1, mb.Coil(COIL_REG+1));
+//         digitalWrite(coilPin2, mb.Coil(COIL_REG+2));
+         //digitalWrite(coilPin3, mb.Coil(COIL_REG+3));
        }
     }
+
+    digitalWrite(coilPin0, mb.Coil(COIL_REG));
+    Serial.println(mb.Coil(COIL_REG));
+    digitalWrite(coilPin1, mb.Coil(COIL_REG+1));
+    Serial.println(mb.Coil(COIL_REG+1));
+    digitalWrite(coilPin2, mb.Coil(COIL_REG+2));
+    Serial.println(mb.Coil(COIL_REG+2));
+    Serial.println();
+    Serial.println();
+    Serial.println();
+    
     //Call once inside loop() - all magic here
     mb.task();
     //delay(10);

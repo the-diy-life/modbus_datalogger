@@ -17,7 +17,7 @@
 #include <ModbusIP_ESP8266.h>
 
 char macAddr[18];
-#define TOKEN  ""  // Put here your Ubidots TOKEN
+#define TOKEN  "BBFF-p51mIO3hV0xz5M8mufeAHatCyIWZDl"  // Put here your Ubidots TOKEN
 //BBFF-p51mIO3hV0xz5M8mufeAHatCyIWZDl
 
 // Set the host to the esp8266 file system
@@ -43,7 +43,7 @@ DHTesp dht;
 */
 ESP8266WebServer espServer(80);
 
-Ubidots client(TOKEN);
+Ubidots mqtt(TOKEN);
 
 char daysOfTheWeek[7][12] = {"Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"};
 // Define NTP Client to get time
@@ -64,10 +64,12 @@ uint16_t humidity = 0;
 
 const int REG = 100;               // Modbus Hreg Offset
 IPAddress remote(10, 2, 101, 103);  // Address of Modbus Slave device
-const int LOOP_COUNT = 10;
-uint8_t show = LOOP_COUNT;
+
 const uint16_t COIL_REG = 200;
 bool coil[4] = {0};
+bool Switch = 1;
+int ledPin = D0;
+char ubidotsMAC[30];
 
 
 ModbusIP mb;  //ModbusIP object
@@ -223,16 +225,48 @@ void callback(char* topic, byte* payload, unsigned int length) {
   for (int i=0;i<length;i++) {
     Serial.print((char)payload[i]);
   }
-  Serial.println();
+  if ((*payload-48)==0 || (*payload-48)==1)
+  {
+    char tempBuff[100];
+    int i = 0;
+    digitalWrite(ledPin, (*payload-48));
+    Serial.println();
+    for(i = 0 ; i <3 ; i++){
+      memset(tempBuff,0,100);
+      snprintf(tempBuff,100,"/v1.6/devices/%s/switch%d/lv", macAddr, i); 
+      if (!strcmp(topic, tempBuff)){
+        Serial.println(strcmp(topic, tempBuff));
+        if (!mb.isConnected(remote)){
+          mb.connect(remote);
+        }
+        mb.task();
+        mb.writeCoil(remote, COIL_REG + i, (*payload-48));
+      }
+    }  
+//    if (!strcmp(topic, "/v1.6/devices/modbus/switch0/lv")){
+//      Serial.println(strcmp(topic, "/v1.6/devices/modbus/switch0/lv"));
+//      mb.writeCoil(remote, COIL_REG, (*payload-48));
+//    }
+//    else if (!strcmp(topic, "/v1.6/devices/modbus/switch1/lv")){
+//      Serial.println(strcmp(topic, "/v1.6/devices/modbus/switch1/lv"));
+//      mb.writeCoil(remote, COIL_REG+1, (*payload-48));
+//    }
+//    else if (!strcmp(topic, "/v1.6/devices/modbus/switch2/lv")){
+//      Serial.println(strcmp(topic, "/v1.6/devices/modbus/switch2/lv"));
+//      mb.writeCoil(remote, COIL_REG+2, (*payload-48));
+//    }
+  }
+  mb.task();
 }
 
 
 void setup(){
-    client.setDebug(true); // Pass a true or false bool value to activate debug messages
+    mqtt.ubidotsSetBroker("business.api.ubidots.com"); // Sets the broker properly for the business account
+    mqtt.setDebug(true); // Pass a true or false bool value to activate debug messages
     Serial.begin(115200);
     //dht.setup(DHTpin, DHTesp::DHT11); //for DHT11 Connect DHT sensor to GPIO 17
-    //client.wifiConnection(WIFISSID, PASSWORD);
-    //client.setDebug(true); // Uncomment this line to set DEBUG on
+    //mqtt.wifiConnection(WIFISSID, PASSWORD);
+    //mqtt.setDebug(true); // Uncomment this line to set DEBUG on
 
     // commit 512 bytes of ESP8266 flash (for "EEPROM" emulation)
     // this step actually loads the content (512 bytes) of flash into
@@ -243,8 +277,6 @@ void setup(){
     // cast bytes into structure called data
     EEPROM.get(addr, data);
     Serial.println("Values are: " + String(data.val) + "," + String(data.interval));
-
-    client.changeToken(data.val);
     
     //Start flash file system
     SPIFFS.begin();
@@ -283,25 +315,36 @@ void setup(){
     espServer.on("/getSettings", HTTP_GET, bindValues);
     espServer.on("/OTA", HTTP_GET, uploadCode);
 
-    //client.wifiConnection(WIFISSID, PASSWORD);
+    //mqtt.wifiConnection(WIFISSID, PASSWORD);
     byte mac[6];
     WiFi.macAddress(mac);
-    sprintf(macAddr, "%2X%2X%2X%2X%2X%2X", mac[0], mac[1], mac[2], mac[3], mac[4], mac[5]);
+    sprintf(macAddr, "%2x%2x%2x%2x%2x%2x", mac[0], mac[1], mac[2], mac[3], mac[4], mac[5]);
     Serial.println("macAddr");
     Serial.println(macAddr);
-    client.initialize(data.val,macAddr);
-    client.begin(callback);
+    //mqtt.wifiConnection("", "");
+    //mqtt.initialize(data.val,macAddr);
+    mqtt.changeToken(data.val);
+    mqtt.changeClientID(macAddr);
+    mqtt.begin(callback);
     
     // start the server
     espServer.begin();
-    Serial.println("HTTP server started");
+    Serial.println("HTTP2 server started");
+    pinMode(ledPin, OUTPUT);
+    digitalWrite(ledPin, LOW);
+    
+    mqtt.ubidotsSubscribe(macAddr, "+");
+    //mqtt.ubidotsSubscribe("modbus", "+"); //Insert the dataSource and Variable's Labels
+    //mqtt.ubidotsSubscribe("modbus", "switch0"); //Insert the dataSource and Variable's Labels
+    //mqtt.ubidotsSubscribe("modbus", "switch1"); //Insert the dataSource and Variable's Labels
+    //mqtt.ubidotsSubscribe("modbus", "switch2"); //Insert the dataSource and Variable's Labels
 }
 
 void loop(){
-    espServer.handleClient();
-    MDNS.update();
-
-    timeClient.update();
+//    espServer.handleClient();
+////    MDNS.update();
+//
+////    timeClient.update();
 
     // make the request if the interval is valid
     if ((millis() - mytime) > (data.interval * 1000) && data.interval >= 30) {
@@ -314,54 +357,58 @@ void loop(){
         //delay(dht.getMinimumSamplingPeriod());
         //float value1 = dht.getTemperature();
         //float value2 = dht.getHumidity();
-        //client.add("temperature", value1);
-        //client.add("humidity", value2);
+        //mqtt.add("temperature", value1);
+        //mqtt.add("humidity", value2);
 
-        unsigned long timestamp = timeClient.getEpochTime();
-        Serial.printf("\ntimestamp = %ld\n", timestamp);
+//        unsigned long timestamp = timeClient.getEpochTime();
+//        Serial.printf("\ntimestamp = %ld\n", timestamp);
         
-        //client.add("5da32863e694aa4ba82dcd35", value1, timestamp);
-        //client.add("5da33830bbddbd73a86702f1", value2, timestamp);
-        //client.add("humidity2", value2, timestamp);
-        //client.sendAll(true);
+        //mqtt.add("5da32863e694aa4ba82dcd35", value1, timestamp);
+        //mqtt.add("5da33830bbddbd73a86702f1", value2, timestamp);
+        //mqtt.add("humidity2", value2, timestamp);
+        //mqtt.sendAll(true);
         //delay(5000);
         //upload++;
 
         if (mb.isConnected(remote)) {   // Check if connection to Modbus Slave is established
           mb.readHreg(remote, REG, &temperature);  // Initiate Read Coil from Modbus Slave
           mb.readHreg(remote, REG+1, &humidity);  // Initiate Read Coil from Modbus Slave
-          mb.writeCoil(remote, COIL_REG, coil[0]);
-          mb.writeCoil(remote, COIL_REG+1, coil[1]);
-          mb.writeCoil(remote, COIL_REG+2, coil[2]);
-          //mb.writeCoil(remote, COIL_REG+3, coil[3]);
-          coil[0] ^= 1;
-          coil[1] ^= 1;
-          coil[2] ^= 1;
-          //coil[4] ^= 1;
+//          mb.writeCoil(remote, COIL_REG, coil[0]);
+//          mb.writeCoil(remote, COIL_REG+1, coil[1]);
+//          mb.writeCoil(remote, COIL_REG+2, coil[2]);
+//          //mb.writeCoil(remote, COIL_REG+3, coil[3]);
+//          coil[0] ^= 1;
+//          coil[1] ^= 1;
+//          coil[2] ^= 1;
+//          //coil[4] ^= 1;
         } else {
           mb.connect(remote);           // Try to connect if no connection
         }
-        mb.task();                      // Common local Modbus task
-        delay(100);                     // Pulling interval
-        if (!show--) {                   // Display Slave register value one time per second (with default settings)
-          Serial.println(temperature);
-          Serial.println(humidity);
-          show = LOOP_COUNT;
-        }        
+        mb.task();                      // Common local Modbus task        
         
-        if(!client.connected()){
-          client.reconnect();
+        if(!mqtt.connected()){
+          mqtt.reconnect();
         }
-        if(client.connected()){
-          client.ubidotsSubscribe("modbus", "temperature");
-          client.add("temperature", temperature);
-          client.ubidotsSubscribe("modbus", "humidity");
-          client.add("humidity", humidity);          
-          client.ubidotsPublish("modbus");
+        if(mqtt.connected()){
+          mqtt.add("temperature", temperature);
+          mqtt.add("humidity", humidity);          
+          //mqtt.ubidotsPublish("modbus");
+          mqtt.ubidotsPublish(macAddr);
         }
-        client.loop();
       }
     }
+
+    mb.task();                      // Common local Modbus task
+    
+    if(!mqtt.connected()){
+      mqtt.reconnect();
+      mqtt.ubidotsSubscribe(macAddr, "+");
+      //mqtt.ubidotsSubscribe("modbus", "+");
+      //mqtt.ubidotsSubscribe("modbus", "switch0");
+      //mqtt.ubidotsSubscribe("modbus", "switch1");
+      //mqtt.ubidotsSubscribe("modbus", "switch2");
+    }
+    mqtt.loop();
 
     if (upload == 2)
     {
@@ -420,7 +467,7 @@ void response() {
       Serial.print("User entered:\t");
       Serial.println(espServer.arg("token"));
       espServer.arg("token").toCharArray(data.val, 40);
-      client.changeToken(data.val);
+      mqtt.changeToken(data.val);
     }
     else {
       return espServer.send(500, "text/plain", "BAD ARGS");
@@ -474,8 +521,8 @@ void response() {
     //delay(500);
     handleFileRead("/success.htm");
 
-    client.disconnect();
-    client.reconnect();
+    mqtt.disconnect();
+    mqtt.reconnect();
 }
 
 void bindValues() {
