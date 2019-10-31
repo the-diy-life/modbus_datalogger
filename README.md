@@ -1,8 +1,8 @@
 # *modbus_datalogger*
-----
+
 ## Description
 
-> This project uses 2 ESP8266 NODEMCU module (server and client), DHT11 temperature and humidity sensor and 4 relays with Arduino IDE to send the temperature and humidity readings to ubidots platform and cotrol the relays from switches on ubidots.
+This project uses 2 ESP8266 NODEMCU module (server and client), DHT11 temperature and humidity sensor and 4 relays with Arduino IDE to send the temperature and humidity readings to ubidots platform and cotrol the relays from switches on ubidots.
 ___
 ## External Libraries
 
@@ -15,34 +15,30 @@ We are using DHTesp library file by “beegee Tokyo” to read the temperature a
 ### ArduinoJson
 We are using andruino json library by Benoît Blanchon to create and read the configration file in the SPIFFS, Benoît Blanchon thank you. To install ArduinoJson [library](https://github.com/bblanchon/ArduinoJson).
 
-### Adafruit_MQTT_Library﻿
+### Ubidots_MQTT_Library
+We are using ubidots MQTT library by ubidots to send and receive data using MQTT protocol, So thanks to ubidots. To install ubidots MQTT [library](https://github.com/ubidots/ubidots-mqtt-esp).
 
- Last external library we use in this project is the adafruit MQTT library by Adafruit, big thanks to Adafruit. To Install the adafruit MQTT library for [Arduino](https://github.com/adafruit/Adafruit_MQTT_Library).
+### Modbus_Library
+We are using modbus library by emelianov to send and receive data using modbus protocol, So thanks to emelianov. To install Modbus [library](https://github.com/emelianov/modbus-esp8266).
 ___
 ## How It Works
 
-### - server
+>###- server
+The ESP8266 modbus server is connected to 4 relays and DHT11 sensor, it reads temperature and humidity values every 1 second and sends this values to a modbus client through modbus protocol.
+It always looping around the coils registers to see if the client has made changes in it and then update the coils with these new values.
 
-### - client
-
-___
-The ESP8266 reads the temperature and the humidity through the DHT11 sensor. It connects to the Adafruit IO website through WiFi and sends the sensor readings to the feeds through MQTT. We have setup a Webserver on the ESP8266 to configure the Adafruit IO logging parameters:
-
-   1. Start/Stop sending the data.
+>###- client
+The ESP8266 modbus client has alot of features, it is connected to the server through modbus, connected to ubidots platform through MQTT
+and it is also works as a web server.
+It has some files on its flash memory that you can access them through HTTP request to input your configuration:
+   1. Your ubidots TOKEN.
    2. The frequency of sending.
-   3. Adafruit IO API key.
-   
-All this is done through the “control settings” HTML page that’s hosted in ESP8266 web server.
+   3. Enable/Disable sending the data.
+It read the temperature and humidity values from server every configured interval, then sends these values to ubidots.
+It gets values of the switches from ubidots then sends them to the modbus server to update the coils.
 
-## Quick Start
-
-To run the code you need to:
-
- 1. Install the wifi manager library from [github](https://github.com/tzapu/WiFiManager). or from the tools menu in the Arduino IDE. choose “Manage libraries”, then type wifimanager in the search bar and install the one from tzapu. I used version 0.14.0.
- 2. Install the DHTesp library from [github](https://github.com/beegee-tokyo/DHTesp), or from the library Manager, type DHTesp in the search bar and install it. I used version 1.0.9.
- 3.	Install the ArduinoJson  library from [github](https://github.com/bblanchon/ArduinoJson), Or in Manage libraries type ArduinoJson in the search bar and install it.
- 4.	Install the adafruit MQTT library from [github](https://github.com/adafruit/Adafruit_MQTT_Library) or from the tools menu in the Arduino IDE. choose “Manage libraries” , and type adafruit MQTT library in the search bar and install it.
- 5. Upload the HTML files in the data folder to the SPIFFS by clicking “ESP8266 sketch data upload” from the tools menu of the Arduino IDE,  be sure that the serial window is closed. If you do not have the “ESP8266 sketch data upload” in the tools menu please check this [link](https://github.com/esp8266/arduino-esp8266fs-plugin) to install the plugin. This will add the control settings page to the ESP8266 web server.
+__NOTE__: If there is any upgrade in the code you can upload it to your ESP Over The Air by requesting the route (/OTA).
+___
 
 For more details please check our [blog post](https://www.the-diy-life.co/2019/09/03/esp8266-and-adafruit-io/)
 
