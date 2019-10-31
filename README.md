@@ -23,18 +23,22 @@ We are using modbus library by emelianov to send and receive data using modbus p
 ___
 ## How It Works
 
->###- server
+### - server
 The ESP8266 modbus server is connected to 4 relays and DHT11 sensor, it reads temperature and humidity values every 1 second and sends this values to a modbus client through modbus protocol.
+
 It always looping around the coils registers to see if the client has made changes in it and then update the coils with these new values.
 
->###- client
+### - client
 The ESP8266 modbus client has alot of features, it is connected to the server through modbus, connected to ubidots platform through MQTT
 and it is also works as a web server.
+
 It has some files on its flash memory that you can access them through HTTP request to input your configuration:
    1. Your ubidots TOKEN.
    2. The frequency of sending.
    3. Enable/Disable sending the data.
+
 It read the temperature and humidity values from server every configured interval, then sends these values to ubidots.
+
 It gets values of the switches from ubidots then sends them to the modbus server to update the coils.
 
 __NOTE__: If there is any upgrade in the code you can upload it to your ESP Over The Air by requesting the route (/OTA).
