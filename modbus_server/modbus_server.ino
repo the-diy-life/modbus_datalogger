@@ -118,16 +118,16 @@ void loop() {
 
   /* read the coils values from the client modbus registers and write them */
   digitalWrite(coilPin0, modbus.Coil(COIL_REG));
-  Serial.println(modbus.Coil(COIL_REG));
+  //Serial.println(modbus.Coil(COIL_REG));
   digitalWrite(coilPin1, modbus.Coil(COIL_REG+1));
-  Serial.println(modbus.Coil(COIL_REG+1));
+  //Serial.println(modbus.Coil(COIL_REG+1));
   digitalWrite(coilPin2, modbus.Coil(COIL_REG+2));
-  Serial.println(modbus.Coil(COIL_REG+2));
+  //Serial.println(modbus.Coil(COIL_REG+2));
   digitalWrite(coilPin3, modbus.Coil(COIL_REG+3));
-  Serial.println(modbus.Coil(COIL_REG+3));
-  Serial.println();
-  Serial.println();
-  Serial.println();
+  //Serial.println(modbus.Coil(COIL_REG+3));
+  //Serial.println();
+  //Serial.println();
+  //Serial.println();
   
   modbus.task();      /* Call once inside loop() - all magic here */
   //delay(10);

@@ -58,12 +58,14 @@ long second = 0;          /* used to delay 1 second */
 /************************************* class objects ************************************/
 ESP8266WebServer espServer(80);
 Ubidots mqtt(TOKEN);
-IPAddress remote(10, 2, 101, 103);  /* put here the IP Address of Modbus Slave device */
+IPAddress remote(10, 2, 101, 108);  /* put here the IP Address of Modbus Slave device */
 ModbusIP modbus;
 
 /********************************** initialization code *********************************/
 void setup(){
   /* Sets the broker properly for the business account */
+  //mqtt.ubidotsSetBroker("test.mosquitto.org");
+  /* you must set this broker if your account is a business account to avoid problems */
   mqtt.ubidotsSetBroker("business.api.ubidots.com");
   /* Pass a true or false bool value to activate debug messages */
   mqtt.setDebug(true);
@@ -128,7 +130,7 @@ void setup(){
    * then convert it to be one string */
   byte mac[6];
   WiFi.macAddress(mac);
-  sprintf(macAddr, "%2x%2x%2x%2x%2x%2x", mac[0], mac[1], mac[2], mac[3], mac[4], mac[5]);
+  sprintf(macAddr, "%02x%02x%02x%02x%02x%02x", mac[0], mac[1], mac[2], mac[3], mac[4], mac[5]);
   Serial.println("macAddr: ");
   Serial.print(macAddr);
 
@@ -376,6 +378,7 @@ void callback(char* topic, byte* payload, unsigned int length) {
   for (int i=0;i<length;i++) {
     Serial.print((char)payload[i]);
   }
+  Serial.println("");
 
   /* check if the data that is received from a publisher is 0 or 1
    * Note: the received data are strings, so we must convert it to
@@ -389,7 +392,7 @@ void callback(char* topic, byte* payload, unsigned int length) {
       memset(tempBuff,0,100);
       snprintf(tempBuff,100,"/v1.6/devices/%s/switch%d/lv", macAddr, i); 
       if (!strcmp(topic, tempBuff)){
-        Serial.println(strcmp(topic, tempBuff));
+        //Serial.println(strcmp(topic, tempBuff));
         /* check the connection of the modbus */
         if (!modbus.isConnected(remote)){
           modbus.connect(remote);
